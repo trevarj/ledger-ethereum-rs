@@ -88,24 +88,9 @@ pub struct GetAddressResponse {
     pub chain_code: Option<Vec<u8>>,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::BIP44Path;
-
-    #[test]
-    fn bip44() {
-        // let path = BIP44Path {
-        //     purpose: 0x8000_0000 | 0x2c,
-        //     coin: 0x8000_0000 | 1,
-        //     account: 0x1234,
-        //     change: 0,
-        //     index: 0x5678,
-        // };
-        // let serialized_path = path.serialize_bip44();
-        // assert_eq!(serialized_path.len(), 20);
-        // assert_eq!(
-        //     hex::encode(&serialized_path),
-        //     "2c00008001000080341200000000000078560000"
-        // );
-    }
+#[derive(Debug)]
+pub struct Signature {
+    pub v: u8,
+    pub r: [u8; 32],
+    pub s: [u8; 32],
 }

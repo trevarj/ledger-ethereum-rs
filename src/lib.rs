@@ -4,8 +4,10 @@ use ledger_transport::{APDUCommand, APDUErrorCode, Exchange};
 use ledger_zondax_generic::{App, AppExt, ChunkPayloadType, LedgerAppError, Version};
 use types::{
     BIP44Path, EthError, GetAddressResponse, InstructionCode, LedgerEthTransactionResolution,
+    Signature,
 };
 
+// https://github.com/LedgerHQ/app-ethereum/blob/develop/doc/ethapp.adoc#general-purpose-apdus
 // https://github.com/LedgerHQ/ledger-live/blob/develop/libs/ledgerjs/packages/hw-app-eth/src/Eth.ts
 #[derive(Debug)]
 pub struct EthApp<E: Exchange> {
@@ -124,8 +126,9 @@ where
         &self,
         path: &BIP44Path,
         raw_tx_hex: &[u8],
-        resolution: Option<LedgerEthTransactionResolution>,
-    ) -> Result<(), EthError<E::Error>> {
+        // TODO: come back to this later and see if we can resolve txns instead of blind signing
+        _resolution: Option<LedgerEthTransactionResolution>,
+    ) -> Result<Signature, EthError<E::Error>> {
         let bip44path = path.serialize_bip44();
 
         let start_command = APDUCommand {
@@ -163,18 +166,26 @@ where
             }
         }
 
-        // let mut r = [0; 32];
-        // r.copy_from_slice(&response_data[..32]);
-        //
-        // let mut s = [0; 32];
-        // s.copy_from_slice(&response_data[32..64]);
-        //
-        // let v = response_data[64];
-        //
-        // let sig = k256::ecdsa::Signature::from_der(&response_data[65..])?;
-        //
-        // let signature = Signature { r, s, v, sig };
-        //
-        Ok(())
+        let v = response_data
+            .first()
+            .ok_or(EthError::MissingResponseData(
+                "signature v component".into(),
+            ))?
+            .to_owned();
+        let r = response_data
+            .get(1..33)
+            .ok_or(EthError::MissingResponseData(
+                "signature r component".into(),
+            ))?
+            .try_into() // safe due to get() range
+            .unwrap();
+        let s = response_data
+            .get(33..65)
+            .ok_or(EthError::MissingResponseData(
+                "signature s component".into(),
+            ))?
+            .try_into() // safe due to get() range
+            .unwrap();
+        Ok(Signature { v, r, s })
     }
 }
