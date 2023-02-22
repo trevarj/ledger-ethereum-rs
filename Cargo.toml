@@ -9,16 +9,16 @@ readme = "README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+byteorder = "1.4.3"
 ledger-transport = "0.10.0"
 ledger-zondax-generic = "0.10.0"
-
 thiserror = "1.0.38"
-
-byteorder = "1.4.3"
-k256 = { version = "0.12.0", features = ["ecdsa", "arithmetic", "std"], default-features = false }
 
 [dev-dependencies]
 anyhow = "1"
+clarity = "0.7.0"
+env_logger = "0.10.0"
 hex = "0.4.3"
-ledger-transport-speculos = { git = "https://github.com/trevarj/ledger-rs.git", rev = "2ed9280" }
+secp256k1 = { version = "0.26.0", features = ["global-context"] }
+ledger-transport-speculos = { git = "https://github.com/trevarj/ledger-rs.git", rev = "fc29a24" }
 tokio = { version = "1.25.0", features = ["full"] }

@@ -7,14 +7,6 @@ pub enum EthError<E: std::error::Error> {
     /// Common Ledger errors
     Ledger(#[from] LedgerAppError<E>),
 
-    /// Device related errors
-    #[error("Secp256k1 error: {0}")]
-    Secp256k1(#[from] k256::elliptic_curve::Error),
-
-    /// Device related errors
-    #[error("Ecdsa error: {0}")]
-    Ecdsa(#[from] k256::ecdsa::Error),
-
     /// Missing response data part
     #[error("Missing response data: {0}")]
     MissingResponseData(String),
@@ -26,6 +18,14 @@ pub enum InstructionCode {
     GetAddress = 0x02,
     SignTransaction = 0x04,
     GetAppConfiguration = 0x06,
+}
+
+/// Chunk payload type
+pub enum ChunkPayloadType {
+    /// First chunk
+    First = 0x00,
+    /// Subsequent chunk
+    Subsequent = 0x80,
 }
 
 /// BIP44 Path
