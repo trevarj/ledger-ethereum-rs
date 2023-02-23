@@ -1,9 +1,13 @@
-pub mod command;
-pub mod types;
+pub(crate) mod command;
+pub(crate) mod types;
 
+pub use command::get_address::*;
+pub use command::get_app_configuration::*;
+pub use command::provide_erc20_token_info::*;
+pub use command::sign_transaction::*;
 use ledger_transport::{APDUCommand, APDUErrorCode, Exchange};
 use ledger_zondax_generic::{App, LedgerAppError};
-use types::ChunkPayloadType;
+pub use types::*;
 
 // https://github.com/LedgerHQ/app-ethereum/blob/develop/doc/ethapp.adoc#general-purpose-apdus
 // https://github.com/LedgerHQ/ledger-live/blob/develop/libs/ledgerjs/packages/hw-app-eth/src/Eth.ts
