@@ -77,20 +77,3 @@ pub struct ExternalPluginData {
     pub payload: String,
     pub signature: String,
 }
-
-#[derive(Debug)]
-pub struct GetAddressResponse {
-    /// Secp256k1 pubkey bytes
-    pub public_key: Vec<u8>,
-    /// Address bytes in raw UTF-8, without "0x" prefix
-    pub address: Vec<u8>,
-    /// Optional chain code bytes
-    pub chain_code: Option<Vec<u8>>,
-}
-
-#[derive(Debug)]
-pub struct Signature {
-    pub v: u8,
-    pub r: [u8; 32],
-    pub s: [u8; 32],
-}

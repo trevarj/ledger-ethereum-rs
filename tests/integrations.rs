@@ -1,9 +1,16 @@
 use anyhow::Result;
-use clarity::{Address, Transaction};
-use ledger_ethereum::types::{BIP44Path, GetAddressResponse, Signature};
-use ledger_ethereum::EthApp;
+use clarity::{Address as EthAddress, Transaction};
+use ledger_ethereum::{Address, BIP44Path, EthApp, Signature};
 use ledger_transport_speculos::TransportSpeculosHttp;
 use secp256k1::{Message, PublicKey};
+
+const EXPECTED_PUBKEY: [u8; 65] = [
+    4, 60, 73, 239, 200, 111, 19, 92, 166, 192, 250, 16, 246, 185, 171, 38, 196, 97, 46, 80, 214,
+    92, 247, 242, 143, 159, 171, 17, 123, 172, 102, 98, 255, 12, 19, 112, 46, 16, 14, 149, 110, 17,
+    214, 245, 150, 40, 43, 219, 212, 191, 88, 228, 204, 91, 235, 204, 198, 89, 74, 193, 208, 103,
+    212, 203, 30,
+];
+
 fn app() -> EthApp<TransportSpeculosHttp> {
     EthApp::new(TransportSpeculosHttp::new("172.17.0.2", 5000))
 }
@@ -23,14 +30,13 @@ fn first_address() -> BIP44Path {
 #[tokio::test]
 async fn can_get_address() -> Result<()> {
     let app = app();
-    let GetAddressResponse {
+    let Address {
         public_key,
         address,
         ..
     } = app.address(&first_address(), None, None).await?;
-    let public_key = hex::encode(public_key);
     let address = "0x".to_string() + &String::from_utf8(address)?;
-    assert_eq!("043c49efc86f135ca6c0fa10f6b9ab26c4612e50d65cf7f28f9fab117bac6662ff0c13702e100e956e11d6f596282bdbd4bf58e4cc5bebccc6594ac1d067d4cb1e", public_key);
+    assert_eq!(EXPECTED_PUBKEY.as_slice(), public_key);
     assert_eq!("0x7562EF289fAf3554eEd27844B6473f165887cd40", address);
     Ok(())
 }
@@ -45,17 +51,25 @@ async fn can_sign_transaction() -> Result<()> {
         nonce: 0u32.into(),
         gas_price: 1_000_000u32.into(),
         gas_limit: 1_000_000u32.into(),
-        to: Address::parse_and_validate("0x7562EF289fAf3554eEd27844B6473f165887cd40")?,
+        to: EthAddress::parse_and_validate("0x7562EF289fAf3554eEd27844B6473f165887cd40")?,
         value: 1_000_000_000_000u128.into(),
         data: vec![],
         signature: None,
     };
     let raw_tx = tx.to_bytes()?;
-    dbg!(hex::encode(&raw_tx));
+    dbg!(format!("{tx}"));
     let Signature { r, s, .. } = app.sign(&path, &raw_tx, None).await?;
     let sig = secp256k1::ecdsa::Signature::from_compact([r, s].concat().as_slice())?;
-    let pubkey = PublicKey::from_slice(&hex::decode("043c49efc86f135ca6c0fa10f6b9ab26c4612e50d65cf7f28f9fab117bac6662ff0c13702e100e956e11d6f596282bdbd4bf58e4cc5bebccc6594ac1d067d4cb1e")?)?;
+    let pubkey = PublicKey::from_slice(&EXPECTED_PUBKEY)?;
     let msg = Message::from_slice(&tx.hash())?;
     sig.verify(&msg, &pubkey)?;
+    Ok(())
+}
+
+#[tokio::test]
+async fn can_get_app_configuration() -> Result<()> {
+    let app = app();
+    let config = dbg!(app.configuration().await?);
+    assert_eq!("1.10.2", config.version);
     Ok(())
 }

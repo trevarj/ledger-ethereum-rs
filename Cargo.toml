@@ -18,7 +18,6 @@ thiserror = "1.0.38"
 anyhow = "1"
 clarity = "0.7.0"
 env_logger = "0.10.0"
-hex = "0.4.3"
 secp256k1 = { version = "0.26.0", features = ["global-context"] }
 ledger-transport-speculos = { git = "https://github.com/trevarj/ledger-rs.git", rev = "fc29a24" }
 tokio = { version = "1.25.0", features = ["full"] }
