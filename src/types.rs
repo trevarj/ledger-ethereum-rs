@@ -10,14 +10,10 @@ pub enum EthError<E: std::error::Error> {
     /// Missing response data part
     #[error("Missing response data: {0}")]
     MissingResponseData(String),
-}
 
-#[derive(Debug)]
-#[repr(u8)]
-pub enum InstructionCode {
-    GetAddress = 0x02,
-    SignTransaction = 0x04,
-    GetAppConfiguration = 0x06,
+    /// Miscellaneous error
+    #[error("{0}")]
+    Other(String),
 }
 
 /// Chunk payload type

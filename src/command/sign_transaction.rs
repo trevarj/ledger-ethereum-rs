@@ -1,9 +1,8 @@
 use ledger_transport::{APDUCommand, APDUErrorCode, Exchange};
 use ledger_zondax_generic::{App, LedgerAppError};
 
-use crate::types::{
-    BIP44Path, ChunkPayloadType, EthError, InstructionCode, LedgerEthTransactionResolution,
-};
+use crate::command::InstructionCode;
+use crate::types::{BIP44Path, ChunkPayloadType, EthError, LedgerEthTransactionResolution};
 use crate::EthApp;
 
 #[derive(Debug)]

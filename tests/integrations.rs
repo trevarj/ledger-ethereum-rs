@@ -68,8 +68,18 @@ async fn can_sign_transaction() -> Result<()> {
 
 #[tokio::test]
 async fn can_get_app_configuration() -> Result<()> {
-    let app = app();
-    let config = dbg!(app.configuration().await?);
+    let config = dbg!(app().configuration().await?);
     assert_eq!("1.10.2", config.version);
+    Ok(())
+}
+
+#[tokio::test]
+async fn can_provide_erc20_info() -> Result<()> {
+    std::env::set_var("RUST_LOG", "DEBUG");
+    env_logger::init();
+    // https://github.com/LedgerHQ/ledger-live/blob/develop/libs/ledgerjs/packages/cryptoassets/src/data/evm/5/erc20.json
+    app()
+        .provide_erc20_token_info("usdc", &hex::decode("07865c6E87B9F70255377e024ace6630C1Eaa37F").unwrap(), 6, 5, b"304402202736a1fe050770aa00916f53d90bfee112eea5cb5ad139b8e8829d95cdbdf94602202fb39953c0d6189dd8bb8c69c7e9145a67fb535243fa91e8e82eb38d5edf767f")
+        .await?;
     Ok(())
 }

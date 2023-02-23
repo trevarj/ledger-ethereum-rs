@@ -1,7 +1,8 @@
 use ledger_transport::{APDUCommand, Exchange};
 use ledger_zondax_generic::App;
 
-use crate::types::{EthError, InstructionCode};
+use crate::command::InstructionCode;
+use crate::types::EthError;
 use crate::{EthApp, LedgerAppError};
 
 #[derive(Debug)]
