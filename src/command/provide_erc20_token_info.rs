@@ -1,9 +1,8 @@
-use byteorder::{BigEndian, WriteBytesExt};
 use ledger_transport::{APDUCommand, APDUErrorCode, Exchange};
 use ledger_zondax_generic::App;
 
 use crate::command::InstructionCode;
-use crate::types::{BIP44Path, EthError};
+use crate::types::EthError;
 use crate::{EthApp, LedgerAppError};
 
 impl<E> EthApp<E>
@@ -20,25 +19,7 @@ where
     /// ticker || address || number of decimals (uint4be) || chainId (uint4be)
     /// signed by the following secp256k1 public key
     /// 0482bbf2f34f367b2e5bc21847b6566f21f0976b22d3388a9a5e446ac62d25cf725b62a2555b2dd464a4da0ab2f4d506820543af1d242470b1b1a969a27578f353
-    pub async fn provide_erc20_token_info(
-        &self,
-        ticker: &str,
-        contract_address: &[u8],
-        decimals: u8,
-        chain_id: u8,
-        token_signature: &[u8],
-    ) -> Result<(), EthError<E::Error>> {
-        let mut data = vec![];
-        let ticker_len: u8 = ticker
-            .len()
-            .try_into()
-            .map_err(|_| EthError::Other("Ticker length out of bounds".into()))?;
-        data.write_u8(ticker_len).unwrap();
-        data.extend_from_slice(ticker.as_bytes());
-        data.extend_from_slice(contract_address);
-        data.write_u32::<BigEndian>(decimals.into()).unwrap();
-        data.write_u32::<BigEndian>(chain_id.into()).unwrap();
-        data.extend_from_slice(token_signature);
+    pub async fn provide_erc20_token_info(&self, data: &[u8]) -> Result<(), EthError<E::Error>> {
         let command = APDUCommand {
             cla: Self::CLA,
             ins: InstructionCode::ProvideErc20TokenInfo as _,
