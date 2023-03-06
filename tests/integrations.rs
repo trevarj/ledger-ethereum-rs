@@ -1,13 +1,23 @@
+#![feature(once_cell)]
+use std::sync::LazyLock;
+
 use anyhow::Result;
 use byteorder::{BigEndian, WriteBytesExt};
 use ethereum_tx_sign::{LegacyTransaction, Transaction};
 use ledger_ethereum::{Address, BIP44Path, EthApp, Signature};
+use ledger_transport_speculos::api::Button;
 use ledger_transport_speculos::TransportSpeculosHttp;
 use rlp::RlpStream;
 use secp256k1::hashes::sha256::Hash;
 use secp256k1::{Message, PublicKey};
 use serial_test::serial;
 use tiny_keccak::{Hasher, Keccak};
+use tokio::spawn;
+
+static LOGGER: LazyLock<()> = LazyLock::new(|| {
+    std::env::set_var("RUST_LOG", "DEBUG");
+    env_logger::init();
+});
 
 const EXPECTED_PUBKEY: [u8; 65] = [
     4, 60, 73, 239, 200, 111, 19, 92, 166, 192, 250, 16, 246, 185, 171, 38, 196, 97, 46, 80, 214,
@@ -17,7 +27,12 @@ const EXPECTED_PUBKEY: [u8; 65] = [
 ];
 
 fn app() -> EthApp<TransportSpeculosHttp> {
+    let _ = LOGGER;
     EthApp::new(TransportSpeculosHttp::new("127.0.0.1", 5000))
+}
+
+fn api_client() -> TransportSpeculosHttp {
+    TransportSpeculosHttp::new("127.0.0.1", 5000)
 }
 
 // 44'/60'/0'/0'/0
@@ -50,8 +65,6 @@ async fn can_get_address() -> Result<()> {
 #[tokio::test]
 #[serial]
 async fn can_sign_transaction() -> Result<()> {
-    std::env::set_var("RUST_LOG", "DEBUG");
-    env_logger::init();
     let app = app();
     let path = first_address();
     let tx = LegacyTransaction {
@@ -79,7 +92,16 @@ async fn can_sign_transaction() -> Result<()> {
     rlp_stream.append(&vec![]);
     rlp_stream.finalize_unbounded_list();
     let raw_tx = rlp_stream.out().to_vec();
-    let Signature { r, s, .. } = app.sign(&path, &raw_tx, None).await?;
+    let client = api_client();
+
+    let _raw_tx = raw_tx.clone();
+    let handle = spawn(async move { app.sign(&path, &_raw_tx, None).await });
+    client.button(Button::Right).await?;
+    client.button(Button::Right).await?;
+    client.button(Button::Right).await?;
+    client.button(Button::Right).await?;
+    client.button(Button::Both).await?;
+    let Signature { r, s, .. } = handle.await??;
     let sig = secp256k1::ecdsa::Signature::from_compact([r, s].concat().as_slice())?;
     let pubkey = PublicKey::from_slice(&EXPECTED_PUBKEY)?;
     let msg = Message::from_slice(&keccak256_hash(&raw_tx))?;
@@ -106,8 +128,6 @@ async fn can_get_app_configuration() -> Result<()> {
 #[tokio::test]
 #[serial]
 async fn can_provide_erc20_info() -> Result<()> {
-    std::env::set_var("RUST_LOG", "DEBUG");
-    env_logger::init();
     let sig1 =
     hex::decode("3045022100fde9f713cb999780a504b8eda31fe0195930935d8b0ad836e183b5c56b5e342d02202c15a0d1ad00b0dacae588524cf4db145934e10c8ba0e89da366e1793f723f70")?;
     let sig = secp256k1::ecdsa::Signature::from_der(&sig1)?;
@@ -142,9 +162,6 @@ async fn can_provide_erc20_info() -> Result<()> {
 #[tokio::test]
 #[ignore = "must build eth app without CHAIN=goerli"]
 async fn can_test_known_erc20() -> Result<()> {
-    // needs to have app compiled without CHAIN=goerli
-    std::env::set_var("RUST_LOG", "DEBUG");
-    env_logger::init();
     let ticker = hex::decode("5a5258")?;
     let addr = hex::decode("e41d2489571d322189246dafa5ebde1f4699f498")?;
     let dec = 18;
