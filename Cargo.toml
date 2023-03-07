@@ -22,7 +22,7 @@ hex = "0.4.3"
 rlp = "0.5.2"
 secp256k1 = { version = "0.26.0", features = ["bitcoin-hashes", "global-context"] }
 serial_test = "1"
-ledger-transport-speculos = { git = "https://github.com/trevarj/ledger-transport-speculos.git", rev = "ae49886" }
-# ledger-transport-speculos = { path = "../ledger-rs/ledger-transport-speculos" }
+ledger-transport-speculos = { git = "https://github.com/trevarj/ledger-transport-speculos.git", rev = "0c335e9" }
+# ledger-transport-speculos = { path = "../ledger-transport-speculos" }
 tiny-keccak = "2.0.2"
 tokio = { version = "1.25.0", features = ["full"] }

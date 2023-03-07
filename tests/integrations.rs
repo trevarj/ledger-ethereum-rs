@@ -5,7 +5,7 @@ use anyhow::Result;
 use byteorder::{BigEndian, WriteBytesExt};
 use ethereum_tx_sign::{LegacyTransaction, Transaction};
 use ledger_ethereum::{Address, BIP44Path, EthApp, Signature};
-use ledger_transport_speculos::api::Button;
+use ledger_transport_speculos::api::{Button, Event};
 use ledger_transport_speculos::TransportSpeculosHttp;
 use rlp::RlpStream;
 use secp256k1::hashes::sha256::Hash;
@@ -96,10 +96,19 @@ async fn can_sign_transaction() -> Result<()> {
 
     let _raw_tx = raw_tx.clone();
     let handle = spawn(async move { app.sign(&path, &_raw_tx, None).await });
-    client.button(Button::Right).await?;
-    client.button(Button::Right).await?;
-    client.button(Button::Right).await?;
-    client.button(Button::Right).await?;
+    for _ in 0..4 {
+        client.button(Button::Right).await?;
+    }
+    let res = client.events(true).await?;
+    let accept_screen = res.events.first();
+    assert_eq!(
+        Some(&Event {
+            text: "Accept".to_string(),
+            x: 45,
+            y: 28
+        }),
+        accept_screen
+    );
     client.button(Button::Both).await?;
     let Signature { r, s, .. } = handle.await??;
     let sig = secp256k1::ecdsa::Signature::from_compact([r, s].concat().as_slice())?;
