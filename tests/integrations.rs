@@ -3,11 +3,9 @@ use std::sync::LazyLock;
 
 use anyhow::Result;
 use byteorder::{BigEndian, WriteBytesExt};
-use ethereum_tx_sign::{LegacyTransaction, Transaction};
 use ledger_ethereum::{Address, BIP44Path, EthApp, Signature};
 use ledger_transport_speculos::api::{Button, Event};
 use ledger_transport_speculos::TransportSpeculosHttp;
-use rlp::RlpStream;
 use secp256k1::hashes::sha256::Hash;
 use secp256k1::{Message, PublicKey};
 use serial_test::serial;
@@ -67,33 +65,10 @@ async fn can_get_address() -> Result<()> {
 async fn can_sign_transaction() -> Result<()> {
     let app = app();
     let path = first_address();
-    let tx = LegacyTransaction {
-        chain: 5,
-        nonce: 0,
-        to: Some(
-            hex::decode("7562EF289fAf3554eEd27844B6473f165887cd40")?
-                .try_into()
-                .unwrap(),
-        ),
-        value: 1_000_000_000_000,
-        gas_price: 1_000_000,
-        gas: 1_000_000,
-        data: vec![],
-    };
-
-    let mut rlp_stream = RlpStream::new();
-    let rlp = tx.rlp_parts();
-    rlp_stream.begin_unbounded_list();
-    for r in rlp.iter() {
-        rlp_stream.append(r);
-    }
-    rlp_stream.append(&tx.chain);
-    rlp_stream.append(&vec![]);
-    rlp_stream.append(&vec![]);
-    rlp_stream.finalize_unbounded_list();
-    let raw_tx = rlp_stream.out().to_vec();
+    let raw_tx = hex::decode(
+        "e880830f4240830f4240947562ef289faf3554eed27844b6473f165887cd4085e8d4a5100080058080",
+    )?;
     let client = api_client();
-
     let _raw_tx = raw_tx.clone();
     let handle = spawn(async move { app.sign(&path, &_raw_tx, None).await });
     for _ in 0..4 {
